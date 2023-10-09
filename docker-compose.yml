@@ -1,0 +1,46 @@
+version: '1'
+services:
+    flask-agent-dvr-telegram:
+        environment:
+            - TELEGRAM_TOKEN=/run/secrets/telegram_token
+            - TELEGRAM_CHAT_ID=/run/secrets/telegram_chatid
+        ports:
+            - '50515:5051'
+        restart: unless-stopped
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        image: 'oaigudmundsson/flask-agent-dvr-telegram:latest'
+    ai-server:
+        ports:
+            - '32168:32168'
+        restart: unless-stopped
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        image: codeproject/ai-server
+        depends_on: 
+          - flask-agent-dvr-telegram
+    ispyagentdvr:
+        volumes:
+            - 'localstorage:/agent/Commands/'
+            - 'localstorage:/agent/Media/XML/'
+            - 'localstorage:/agent/Media/WebServerRoot/Media/'
+            - /agent/Commands
+            - /agent/Media/WebServerRoot/Media
+            - /agent/Media/XML
+        ports:
+            - '8090:8090'
+        restart: unless-stopped
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        image: doitandbedone/ispyagentdvr
+        depends_on: 
+          - flask-agent-dvr-telegram
+          - ai-server
+secrets:
+   telegram_token:
+     file: telegram_token.txt
+   telegram_chatid:
+     file: telegram_chatid.txt
+
+volumes:
+  localstorage:
